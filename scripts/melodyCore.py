@@ -180,7 +180,7 @@ class melody():
         # TO DO ish;    https://pythonguides.com/python-tkinter-read-text-file/
 
         
-        #***********# Defining widgets for ChoiceBar and custom art by using frames
+        #***********# Defining widgets for ChoiceBar                                                                                                                # This will allow for the main UI to change and work for the needs of the user
         self.padding = Canvas(self.choiceBar, background = self.mainBackgroundColor ,width = self.if1Side.winfo_reqwidth(),                                         # Due to where the bottom UI will be placed. I required a bit of padding to move the three tabs.
         height = self.choiceBar.winfo_reqheight(), borderwidth = 0, highlightthickness = 0)                                                                         # 
         self.padding.pack(side="left", expand=True)                                                                                                                 # 
