@@ -58,9 +58,11 @@ class melody():
         self.mainSidebarColor = "#2F2828"
         self.mainForegroundColor = "#413535"
         self.mainSeperatorColor = "#524C4C"
-        self.textWriteColor = "#FFFFFF"
+        self.inputColor = "#332626"
+        self.tabOptionColor = "#332626"
         self.writeForegroundColor = "#272738"
         self.writeBackgroundColor = "#272738"
+        self.textWriteColor = "#FFFFFF"
         self.labelColor = "#FFFFFF"
         self.sideLabelColor = "#928E8E"
         self.titleColor = "#FFFFFF"
@@ -74,6 +76,9 @@ class melody():
         self.writeBlockPadX = 100
         self.writeBlockPadY = 10
         self.buttonPadY = 2
+        self.buttonPadX = 2
+        self.buttonWidth = 5
+        self.buttonHeight = 1
         
         # Defining mainframe and label for root window                                                                                                              # From here, we have two things in screen.
         self.mainLabel = Label(self.root, text="Melody-Annotator v0.0.1 | Opened in: ", background = self.mainBackgroundColor, foreground = self.labelColor)        # A widget acting as a title of the app
@@ -102,11 +107,13 @@ class melody():
         self.inFrame1.grid_columnconfigure(1, weight=1)                                                                                                             # This will affect if1Block.
 
         self.if1Side = Frame(self.inFrame1, background = self.mainSidebarColor, width = self.nonSeperatorSize)                                                      # This frame will be used for a nice &
-        self.if1Side.grid(row=1, column=0, sticky="nsw")                                                                                                            # easy side menu.
+        self.if1Side.pack_propagate(0)                                                                                                                              # (This frame kept getting resized by its children)
+        self.if1Side.grid(row=1, column=0, sticky="nsew")                                                                                                           # easy side menu.
         self.if1Block = Frame(self.inFrame1, background = self.writeBackgroundColor)                                                                                # This frame will be used for opening and displaying
         self.if1Block.grid(row=1, column=1, sticky="nsew")                                                                                                          # text and the tree structure of heading/files.
         self.if1FileBar = Frame(self.inFrame1, background = self.mainForegroundColor, height = self.seperatorFrame)                                                 # This frame will be used to explicitely show which heading/file
-        self.if1FileBar.grid(row=0, column=0, columnspan=2, sticky="ew")                                                                                            # you are looking, and to switch between different tabs.
+        self.if1FileBar.pack_propagate(0)                                                                                                                           # (This frame kept getting resized by its children)
+        self.if1FileBar.grid(row=0, column=0, columnspan=2, sticky="new")                                                                                           # you are looking, and to switch between different tabs.
 
         #*******# Defining widget & frames for if1Block. Including weight distribution                                                                              # This frame contains the various tabs and text output.
         self.if1Block.grid_rowconfigure(0, weight = 1)                                                                                                              # This will affect all widgets/frames.
@@ -124,35 +131,6 @@ class melody():
         self.writingBlock = Text(self.if1Block, highlightthickness = 0, background = self.writeForegroundColor, foreground = self.textWriteColor,                   # Used for displaying text from headers and files
         borderwidth = 0, padx = self.writeBlockPadX, pady = self.writeBlockPadY)                                                                                    # and will apply easy editing and deleting to those files
         self.writingBlock.grid(row=0, column=1, sticky="nswe")                                                                                                      # And it's dynammic to resizing.
-
-        #***********# Defining widgets for treeViewFrame
-        # TO DO ish;    https://www.pythontutorial.net/tkinter/tkinter-listbox/
-        #***********# Defining widgets for searchFrame
-        # TO DO ish;    https://www.pythontutorial.net/tkinter/tkinter-scrollbar/
-        #***********# Defining widgets for spareFrame
-        # TO DO ish;    https://pythonguides.com/python-tkinter-read-text-file/
-
-        #*******# Defining widgets for if1FileBar and a frame. Including weight distribution
-        self.choiceBar = Frame(self.if1FileBar, background = self.mainBackgroundColor, height = self.seperatorFrame,                                                # Due to UI bugs, this has been divided into two frames;
-        width = self.movingSidebar + self.nonSeperatorSize - self.seperatorSize)                                                                                    # This will contain the option to turn off/on treeViewFrame, searchFrame & spareFrame.
-        self.headingBar = Frame(self.if1FileBar, background = self.mainForegroundColor, height = self.nonSeperatorSize)                                             # This frame contains the header, and two button for editing the text box below.
-
-        self.fileSeperator = Canvas(self.if1FileBar, background = self.mainSeperatorColor, height = self.seperatorSize, highlightthickness = 0)                     # This is a UI cosmetic.
-        self.currentView = Label(self.headingBar, text="Te current file or whatever", background = self.mainForegroundColor,                                        # This is to display the name of the header/file.
-        foreground = self.titleColor, anchor = "w", padx = 5)                                                                                                       #
-        self.buttonleft = Button(self.headingBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0)         # A button that will be defined soon.
-        self.buttonRight = Button(self.headingBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0)        # A button that will be defined soon.
-        
-        self.choiceBar.pack(side='left', expand=False)                                                                                                              #
-        self.fileSeperator.pack(side='bottom', anchor="s", expand=True, fill=tk.X)                                                                                  #
-        self.headingBar.pack(side='top', anchor="w", expand=True, fill=tk.X)                                                                                        #
-        
-        self.currentView.pack(side='left', anchor="w", expand=True, fill=tk.X)                                                                                      #
-        self.buttonRight.pack(side='right', anchor="e", expand=False)                                                                                               #
-        self.buttonleft.pack(side='right', anchor="e", expand=False)                                                                                                #
-        
-        #***********# Defining widgets for ChoiceBar
-        # TO DO tmrw
 
         #*******# Defining widgets for if1Side                                                                                                                      # The helpful sidebar that I hope is helpful (Will cause popups or affect UI):
         self.expandButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.emptyAction, highlightthickness = 0, borderwidth = 0)           # This will expand/shrink the UI tabs for treeview, searching and such.
@@ -174,7 +152,52 @@ class melody():
         self.configButton.pack(side='bottom', expand=False, pady = self.buttonPadY)                                                                                 # Ensuring none of the buttons can expand.
         self.openFileButton.pack(side='bottom', expand=False, pady = self.buttonPadY)                                                                               # And they are defined to be placed on the bottom left.
         self.aboutButton.pack(side='bottom', expand=False, pady = self.buttonPadY)                                                                                  #
-    
+
+        #*******# Defining widgets for if1FileBar and a frame. Including weight distribution
+        self.choiceBar = Frame(self.if1FileBar, background = self.mainBackgroundColor, height = self.if1FileBar.winfo_reqheight(),                                                # Due to UI bugs, this has been divided into two frames;
+        width = self.movingSidebar + self.nonSeperatorSize - self.seperatorSize)                                                                                    # This will contain the option to turn off/on treeViewFrame, searchFrame & spareFrame.
+        self.headingBar = Frame(self.if1FileBar, background = self.mainForegroundColor, height = self.nonSeperatorSize)                                             # This frame contains the header, and two button for editing the text box below.
+
+        self.fileSeperator = Canvas(self.if1FileBar, background = self.mainSeperatorColor, height = self.seperatorSize, highlightthickness = 0)                     # This is a UI cosmetic.
+        self.currentView = Label(self.headingBar, text="Te current file or whatever", background = self.mainForegroundColor,                                        # This is to display the name of the header/file.
+        foreground = self.titleColor, anchor = "w", padx = 5)                                                                                                       #
+        self.buttonleft = Button(self.headingBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0)         # A button that will be defined soon.
+        self.buttonRight = Button(self.headingBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0)        # A button that will be defined soon.
+
+        self.choiceBar.pack(side='left', expand=False)                                                                                                              #
+        self.fileSeperator.pack(side='bottom', anchor="s", expand=True, fill=tk.X)                                                                                  #
+        self.headingBar.pack(side='top', anchor="w", expand=True, fill=tk.X)                                                                                        #
+        
+        self.currentView.pack(side='left', anchor="w", expand=True, fill=tk.X)                                                                                      #
+        self.buttonRight.pack(side='right', anchor="e", expand=False)                                                                                               #
+        self.buttonleft.pack(side='right', anchor="e", expand=False)                                                                                                #
+        
+        #***********# Defining widgets for treeViewFrame
+        # TO DO ish;    https://www.pythontutorial.net/tkinter/tkinter-listbox/
+        #***********# Defining widgets for searchFrame
+        # TO DO ish;    https://www.pythontutorial.net/tkinter/tkinter-scrollbar/
+        #***********# Defining widgets for spareFrame
+        # TO DO ish;    https://pythonguides.com/python-tkinter-read-text-file/
+
+        
+        #***********# Defining widgets for ChoiceBar and custom art by using frames
+        self.padding = Canvas(self.choiceBar, background = self.mainBackgroundColor ,width = self.if1Side.winfo_reqwidth(),                                         # Due to where the bottom UI will be placed. I required a bit of padding to move the three tabs.
+        height = self.choiceBar.winfo_reqheight(), borderwidth = 0, highlightthickness = 0)                                                                         # 
+        self.padding.pack(side="left", expand=True)                                                                                                                 # 
+        self.choiceBarUI = Frame(self.choiceBar, background = self.mainBackgroundColor, width = self.movingSidebar, height = self.choiceBar.winfo_reqheight())      # A made a new frame for the tab buttons. This made by life easier.
+        self.choiceBarUI.pack_propagate(0)                                                                                                                          # To prevent the UI widgets from resizing the frame.
+        self.choiceBarUI.pack(side='right', expand=True)                                                                                                            # 
+        
+        self.filesButton = Button(self.choiceBarUI, background = self.mainForegroundColor, command = self.emptyAction, padx=0, pady=0,                              # This will cause the treeViewFrame to appear on the UI.
+        highlightthickness = 0, borderwidth = 0, width = self.buttonWidth, height = self.buttonHeight)                                                              # 
+        self.searchButton = Button(self.choiceBarUI, background = self.tabOptionColor, command = self.emptyAction, padx=0, pady=0,                                  # This will cause the searchFrame to appear on the UI.
+        highlightthickness = 0, borderwidth = 0, width = self.buttonWidth, height = self.buttonHeight)                                                              # 
+        self.spareButton = Button(self.choiceBarUI, background = self.tabOptionColor, command = self.emptyAction, padx=0, pady=0,                                   # This will cause the spareFrame to appear on the UI.
+        highlightthickness = 0, borderwidth = 0, width = self.buttonWidth, height = self.buttonHeight)                                                              # 
+        self.filesButton.pack(side="left", expand=False, anchor = "sw", padx = self.buttonPadX)                                                                     # First.
+        self.searchButton.pack(side="left", expand=False, anchor = "sw", padx = self.buttonPadX)                                                                    # Middle.
+        self.spareButton.pack(side="left", expand=False, anchor = "sw", padx = self.buttonPadX)                                                                     # Last.
+
     def emptyAction(self):
         """ A test function to see if the buttons were implemented correctly
         So far all the buttons added work and appear where they belong
