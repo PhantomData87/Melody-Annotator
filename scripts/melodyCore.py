@@ -46,6 +46,17 @@ class noteNode():
         self._right = None
         self._behind = None
 
+class createWindow():
+    def __init__(self, root, windowType):
+        """ For any button pressed in the UI.
+        This will make a secondary window that will dissapear when the user exits it.
+        """
+        self.root = root
+        self.window = tk.Toplevel(root)
+        self.closingButton = Button(self.window, text='Close', command=self.window.destroy)
+        self.closingButton.pack(side='bottom', expand=True, fill=tk.Y)
+        print(windowType)
+
 class melody():
     def __init__(self, root):
         """ Initialize the GUI of the application
@@ -54,6 +65,10 @@ class melody():
         and will be used to remember any changes made to the application.
         """
         self.root = root
+        width = "1024"
+        height = "1440"
+        self.root.geometry(height+"x"+width)                                                                                                                                      # Width x Height
+        self.root.resizable(True, True)                                                                                                                                      # Set these to False to prevent resizing
 
     # Configuration
         # Colors used in app
@@ -71,12 +86,17 @@ class melody():
         self.labelColor = "#FFFFFF"
         self.sideLabelColor = "#928E8E"
         self.titleColor = "#FFFFFF"
+        self.mainHighlightColor = "#00FF00"
 
         # Size of certain UI elements
         self.seperatorFrame = 35
         self.seperatorSize = 5
         self.nonSeperatorSize = self.seperatorFrame - self.seperatorSize
         self.movingSidebar = 225
+        self.currentWidth = self.movingSidebar
+        self.movingSidebarMin = 155
+        self.movingSidebarMax = int(width) - self.movingSidebar * 3
+        self.animatedSidebarCreep = 10
         self.inputPadX = 5
         self.writeBlockPadX = 100
         self.writeBlockPadY = 10
@@ -117,6 +137,7 @@ class melody():
         self.if1Side.grid(row=1, column=0, sticky="nsew")                                                                                                           # easy side menu.
         self.if1Block = Frame(self.inFrame1, background = self.writeBackgroundColor)                                                                                # This frame will be used for opening and displaying
         self.if1Block.grid(row=1, column=1, sticky="nsew")                                                                                                          # text and the tree structure of heading/files.
+        self.if1Block.grid_propagate(False)                                                                                                                         #
         self.if1FileBar = Frame(self.inFrame1, background = self.mainForegroundColor, height = self.seperatorFrame)                                                 # This frame will be used to explicitely show which heading/file
         self.if1FileBar.pack_propagate(0)                                                                                                                           # (This frame kept getting resized by its children)
         self.if1FileBar.grid(row=0, column=0, columnspan=2, sticky="new")                                                                                           # you are looking, and to switch between different tabs.
@@ -124,10 +145,11 @@ class melody():
         #*******# Defining widget & frames for if1Block. Including weight distribution                                                                              # This frame contains the various tabs and text output.
         self.if1Block.grid_rowconfigure(0, weight = 1)                                                                                                              # This will affect all widgets/frames.
         self.if1Block.grid_columnconfigure(0, weight = 0)                                                                                                           # This will affect treeViewFrame, searchFrame, spareFrame.
-        self.if1Block.grid_columnconfigure(1, weight = 1)                                                                                                           # This will affect writingBlock.
+        self.if1Block.grid_columnconfigure(1, weight = 1)  
+        self.if1Block.grid_columnconfigure(2, weight = 1)                                                                                                           # This will affect writingBlock.
 
         self.spareFrame = Frame(self.if1Block, background = self.mainForegroundColor, width = self.movingSidebar)                                                   # Doesn't have a purpose just yet. It might soon.
-        self.spareFrame.pack_propagate(0)
+        self.spareFrame.pack_propagate(0)                                                                                                                           #
         self.searchFrame = Frame(self.if1Block, background = self.mainForegroundColor, width = self.movingSidebar)                                                  # This frame is used to search in the files.
         self.searchFrame.pack_propagate(0)                                                                                                                          #
         self.treeViewFrame = Frame(self.if1Block, background = self.mainForegroundColor, width = self.movingSidebar)                                                # This frame is used for selecting need headers and files from a tree menu.
@@ -137,18 +159,23 @@ class melody():
         self.searchFrame.grid(row=0, column=0, sticky="nsew")                                                                                                       #
         self.spareFrame.grid(row=0, column=0, sticky="nsew")                                                                                                        #
 
+        self.seperatorDrag = Canvas(self.if1Block, background = self.mainSeperatorColor, width = self.seperatorSize, borderwidth = 0, highlightthickness = 0)       # This can be pulled by the user to resize the current frame.
+        self.seperatorDrag.grid(row=0, column=1, sticky="nsw")                                                                                                      # 
+
         self.writingBlock = Text(self.if1Block, highlightthickness = 0, background = self.writeForegroundColor, foreground = self.textWriteColor,                   # Used for displaying text from headers and files
         borderwidth = 0, padx = self.writeBlockPadX, pady = self.writeBlockPadY)                                                                                    # and will apply easy editing and deleting to those files
-        self.writingBlock.grid(row=0, column=1, sticky="nswe")                                                                                                      # And it's dynammic to resizing.
+        self.writingBlock.grid(row=0, column=2, sticky="nswe")                                                                                                      # And it's dynammic to resizing.
 
         self.writingScroll = Scrollbar(self.if1Block, orient='vertical', command=self.writingBlock.yview)                                                           # Making the text box scrollable by linking this scrollbar to that
-        self.writingScroll.grid(row=0, column=2, sticky="nse")                                                                                                      #
+        self.writingScroll.grid(row=0, column=3, sticky="nse")                                                                                                      #
         self.writingBlock.configure(yscrollcommand=self.writingScroll.set)                                                                                          # Ensuring it communicates back to the scroll widget
 
         #*******# Defining widgets for if1Side                                                                                                                      # The helpful sidebar that I hope is helpful (Will cause popups or affect UI):
-        self.expandButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.emptyAction, highlightthickness = 0, borderwidth = 0)           # This will expand/shrink the UI tabs for treeview, searching and such.
-        self.commandButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.emptyAction, highlightthickness = 0, borderwidth = 0)          # A command pallet button!.
-        self.pluginsButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.emptyAction, highlightthickness = 0, borderwidth = 0)          # To manage plugins.
+        self.expandButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.hideBar, highlightthickness = 0, borderwidth = 0)               # This will expand/shrink the UI tabs for treeview, searching and such.
+        self.commandButton = Button(self.if1Side, background = self.mainSidebarColor, command = lambda: self.userWindow("Pallet"),                                  # A command pallet button!.
+        highlightthickness = 0, borderwidth = 0)                                                                                                                    #
+        self.pluginsButton = Button(self.if1Side, background = self.mainSidebarColor, command = lambda: self.userWindow("Plugin"),                                  # To manage plugins.
+        highlightthickness = 0, borderwidth = 0)                                                                                                                    #
         self.undoButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.emptyAction, highlightthickness = 0, borderwidth = 0)             # To undo.
         self.redoButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.emptyAction, highlightthickness = 0, borderwidth = 0)             # To redo.
 
@@ -158,9 +185,12 @@ class melody():
         self.undoButton.pack(side='top', expand=False, pady = self.buttonPadY)                                                                                      #
         self.redoButton.pack(side='top', expand=False, pady = self.buttonPadY)                                                                                      #
 
-        self.aboutButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.emptyAction, highlightthickness = 0, borderwidth = 0)            # To see a more detailed view of the app
-        self.openFileButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.emptyAction, highlightthickness = 0, borderwidth = 0)         # To open/add a new file for this app to look at
-        self.configButton = Button(self.if1Side, background = self.mainSidebarColor, command = self.emptyAction, highlightthickness = 0, borderwidth = 0)           # To change settings of this thing with some nice UI
+        self.aboutButton = Button(self.if1Side, background = self.mainSidebarColor, command = lambda: self.userWindow("About"),                                     # To see a more detailed view of the app
+        highlightthickness = 0, borderwidth = 0)                                                                                                                    #
+        self.openFileButton = Button(self.if1Side, background = self.mainSidebarColor, command = lambda: self.userWindow("File"),                                   # To open/add a new file for this app to look at
+        highlightthickness = 0, borderwidth = 0)                                                                                                                    #
+        self.configButton = Button(self.if1Side, background = self.mainSidebarColor, command = lambda: self.userWindow("Config"),                                   # To change settings of this thing with some nice UI
+        highlightthickness = 0, borderwidth = 0)                                                                                                                    #
 
         self.configButton.pack(side='bottom', expand=False, pady = self.buttonPadY)                                                                                 # Ensuring none of the buttons can expand.
         self.openFileButton.pack(side='bottom', expand=False, pady = self.buttonPadY)                                                                               # And they are defined to be placed on the bottom left.
@@ -186,75 +216,75 @@ class melody():
         self.buttonleft.pack(side='right', anchor="e", expand=False)                                                                                                #
         
         #***********# Defining widgets for treeViewFrame & treeViewFrameBar
-        self.treeViewFrameBar = Frame(self.treeViewFrame, background = self.mainForegroundColor, width = self.movingSidebar)
-        self.treeViewFrameBar.pack(side="top", anchor="n")
+        self.treeViewFrameBar = Frame(self.treeViewFrame, background = self.mainForegroundColor, width = self.movingSidebar)                                        #
+        self.treeViewFrameBar.pack(side="top", anchor="n")                                                                                                          #
         
-        self.button1 = Button(self.treeViewFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0
-        , width = self.buttonHeight, height = self.buttonHeight)
-        self.button2 = Button(self.treeViewFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0
-        , width = self.buttonHeight, height = self.buttonHeight)
-        self.button3 = Button(self.treeViewFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0
-        , width = self.buttonHeight, height = self.buttonHeight)
-        self.button1.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)
-        self.button2.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)
-        self.button3.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)
+        self.button1 = Button(self.treeViewFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0       #
+        , width = self.buttonHeight, height = self.buttonHeight)                                                                                                    #
+        self.button2 = Button(self.treeViewFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0       #
+        , width = self.buttonHeight, height = self.buttonHeight)                                                                                                    #
+        self.button3 = Button(self.treeViewFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0       #
+        , width = self.buttonHeight, height = self.buttonHeight)                                                                                                    #
+        self.button1.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)                                                                          #
+        self.button2.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)                                                                          #
+        self.button3.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)                                                                          #
 
-        self.FileLabel = Label(self.treeViewFrame, text="Tree branch(es): 0\nFile(s) open: 0", background = self.mainForegroundColor,
-        foreground = self.titleColor, anchor="w", justify="left")
-        self.FileLabel.pack(side="top", anchor="n", expand=False, fill=tk.X)
+        self.FileLabel = Label(self.treeViewFrame, text="Tree branch(es): 0\nFile(s) open: 0", background = self.mainForegroundColor,                               #
+        foreground = self.titleColor, anchor="w", justify="left")                                                                                                   #
+        self.FileLabel.pack(side="top", anchor="n", expand=False, fill=tk.X)                                                                                        #
 
-        self.buttonCanvas = Canvas(self.treeViewFrame, highlightthickness = 0, borderwidth = 0, background = self.mainForegroundColor)
-        self.buttonScrollVer = Scrollbar(self.treeViewFrame, orient='vertical', command=self.buttonCanvas.yview)
-        self.buttonScrollHor = Scrollbar(self.treeViewFrame, orient='horizontal', command=self.buttonCanvas.xview)
-        self.buttonCanvas.configure(yscrollcommand=self.buttonScrollVer.set, xscrollcommand=self.buttonScrollHor.set)
+        self.buttonCanvas = Canvas(self.treeViewFrame, highlightthickness = 0, borderwidth = 0, background = self.mainForegroundColor)                              #
+        self.buttonScrollVer = Scrollbar(self.treeViewFrame, orient='vertical', command=self.buttonCanvas.yview)                                                    #
+        self.buttonScrollHor = Scrollbar(self.treeViewFrame, orient='horizontal', command=self.buttonCanvas.xview)                                                  #
+        self.buttonCanvas.configure(yscrollcommand=self.buttonScrollVer.set, xscrollcommand=self.buttonScrollHor.set)                                               #
 
-        self.buttonScrollVer.pack(side="right", anchor="se", fill=tk.Y)
-        self.buttonScrollHor.pack(side="bottom", anchor="s", fill=tk.X)
-        self.buttonCanvas.pack(side="top", anchor="n", fill=tk.BOTH, expand=True)
+        self.buttonScrollVer.pack(side="right", anchor="se", fill=tk.Y)                                                                                             #
+        self.buttonScrollHor.pack(side="bottom", anchor="s", fill=tk.X)                                                                                             #
+        self.buttonCanvas.pack(side="top", anchor="n", fill=tk.BOTH, expand=True)                                                                                   #
 
-        self.buttonFrame = Frame(self.buttonCanvas, background = self.mainForegroundColor)
-        self.innerButtonCanvas = self.buttonCanvas.create_window(0,0, window=self.buttonFrame, anchor="n")
+        self.buttonFrame = Frame(self.buttonCanvas, background = self.mainForegroundColor)                                                                          #
+        self.innerButtonCanvas = self.buttonCanvas.create_window(0,0, window=self.buttonFrame, anchor="n")                                                          #
 
         #***********# Defining widgets for searchFrame & searchFrameBar & searchInputFrame
-        self.searchFrameBar = Frame(self.searchFrame, background = self.mainForegroundColor, width = self.movingSidebar)
-        self.searchFrameBar.pack(side="top", anchor="n")
+        self.searchFrameBar = Frame(self.searchFrame, background = self.mainForegroundColor, width = self.movingSidebar)                                            #
+        self.searchFrameBar.pack(side="top", anchor="n")                                                                                                            #
         
-        self.search1 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0
-        , width = self.buttonHeight, height = self.buttonHeight)
-        self.search2 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0
-        , width = self.buttonHeight, height = self.buttonHeight)
-        self.search3 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0
-        , width = self.buttonHeight, height = self.buttonHeight)
-        self.search4 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0
-        , width = self.buttonHeight, height = self.buttonHeight)
-        self.search5 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0
-        , width = self.buttonHeight, height = self.buttonHeight)
-        self.search1.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)
-        self.search2.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)
-        self.search3.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)
-        self.search4.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)
-        self.search5.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)
+        self.search1 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0         #
+        , width = self.buttonHeight, height = self.buttonHeight)                                                                                                    #
+        self.search2 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0         #
+        , width = self.buttonHeight, height = self.buttonHeight)                                                                                                    #
+        self.search3 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0         #
+        , width = self.buttonHeight, height = self.buttonHeight)                                                                                                    #
+        self.search4 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0         #
+        , width = self.buttonHeight, height = self.buttonHeight)                                                                                                    #
+        self.search5 = Button(self.searchFrameBar, background = self.mainForegroundColor, command=self.emptyAction, highlightthickness = 0, borderwidth = 0         #
+        , width = self.buttonHeight, height = self.buttonHeight)                                                                                                    #
+        self.search1.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)                                                                          #
+        self.search2.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)                                                                          #
+        self.search3.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)                                                                          #
+        self.search4.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)                                                                          #
+        self.search5.pack(side="left", fill = tk.X, expand = True, padx = self.buttonPadX)                                                                          #
 
-        self.searchInputFrame = Frame(self.searchFrame, background = self.searchBoxColor, width = self.movingSidebar)
-        self.searchInputFrame.pack(side="top", anchor="n", expand=False, fill=tk.X, padx = self.inputPadX)
+        self.searchInputFrame = Frame(self.searchFrame, background = self.searchBoxColor, width = self.movingSidebar)                                               #
+        self.searchInputFrame.pack(side="top", anchor="n", expand=False, fill=tk.X, padx = self.inputPadX)                                                          #
 
-        self.inputSearch = Entry(self.searchInputFrame, background = self.searchBoxColor, foreground = self.fadedSearchColor, 
-        highlightthickness = 0, borderwidth = 0)
+        self.inputSearch = Entry(self.searchInputFrame, background = self.searchBoxColor, foreground = self.fadedSearchColor,                                       #
+        highlightthickness = 0, borderwidth = 0)                                                                                                                    #
         self.inputSearch.insert(0, "Type here to search...")
-        self.inputSearch.pack(side = "left", anchor = "w", expand = True, fill=tk.X, padx = self.inputPadX)
-        self.clearText = Button(self.searchInputFrame, background = self.searchBoxColor, highlightthickness = 0, borderwidth = 0, 
-        command = self.clearInputSearch)
-        self.clearText.pack(side = "right", anchor = "e", expand = False, fill=tk.X)
+        self.inputSearch.pack(side = "left", anchor = "w", expand = True, fill=tk.X, padx = self.inputPadX)                                                         #
+        self.clearText = Button(self.searchInputFrame, background = self.searchBoxColor, highlightthickness = 0, borderwidth = 0,                                   #
+        command = self.clearInputSearch)                                                                                                                            #
+        self.clearText.pack(side = "right", anchor = "e", expand = False, fill=tk.X)                                                                                #
 
-        self.searchCanvas = Canvas(self.searchFrame, highlightthickness = 0, borderwidth = 0, background = self.mainForegroundColor)
-        self.searchScrollVer = Scrollbar(self.searchFrame, orient='vertical', command=self.searchCanvas.yview)
-        self.searchCanvas.configure(yscrollcommand=self.searchScrollVer.set)
+        self.searchCanvas = Canvas(self.searchFrame, highlightthickness = 0, borderwidth = 0, background = self.mainForegroundColor)                                #
+        self.searchScrollVer = Scrollbar(self.searchFrame, orient='vertical', command=self.searchCanvas.yview)                                                      #
+        self.searchCanvas.configure(yscrollcommand=self.searchScrollVer.set)                                                                                        #
 
-        self.searchScrollVer.pack(side="right", anchor="se", fill=tk.Y, expand = True)
-        self.searchCanvas.pack(side="top", anchor = "nw", fill=tk.BOTH, expand = True)
+        self.searchScrollVer.pack(side="right", anchor="se", fill=tk.Y, expand = True)                                                                              #
+        self.searchCanvas.pack(side="top", anchor = "nw", fill=tk.BOTH, expand = True)                                                                              #
 
-        self.searchResultFrame = Frame(self.searchCanvas, background = self.mainForegroundColor)
-        self.innerSearchCanvas = self.searchCanvas.create_window(0,0, window=self.searchResultFrame, anchor="n")
+        self.searchResultFrame = Frame(self.searchCanvas, background = self.mainForegroundColor)                                                                    #
+        self.innerSearchCanvas = self.searchCanvas.create_window(0,0, window=self.searchResultFrame, anchor="n")                                                    #
 
         #***********# Defining widgets for spareFrame
         # Eventually this will obtain a purpose
@@ -268,31 +298,36 @@ class melody():
         self.choiceBarUI.pack_propagate(0)                                                                                                                          # To prevent the UI widgets from resizing the frame.
         self.choiceBarUI.pack(side='right', expand=True)                                                                                                            # 
         
-        self.filesButton = Button(self.choiceBarUI, background = self.mainForegroundColor, command = self.switchFrameTree, padx=0, pady=0,                              # This will cause the treeViewFrame to appear on the UI.
+        self.filesButton = Button(self.choiceBarUI, background = self.mainForegroundColor, command = self.switchFrameTree, padx=0, pady=0,                          # This will cause the treeViewFrame to appear on the UI.
         highlightthickness = 0, borderwidth = 0, width = self.buttonWidth, height = self.buttonHeight)                                                              # 
-        self.searchButton = Button(self.choiceBarUI, background = self.tabOptionColor, command = self.switchFrameSearch, padx=0, pady=0,                                  # This will cause the searchFrame to appear on the UI.
+        self.searchButton = Button(self.choiceBarUI, background = self.tabOptionColor, command = self.switchFrameSearch, padx=0, pady=0,                            # This will cause the searchFrame to appear on the UI.
         highlightthickness = 0, borderwidth = 0, width = self.buttonWidth, height = self.buttonHeight)                                                              # 
-        self.spareButton = Button(self.choiceBarUI, background = self.tabOptionColor, command = self.switchFrameSpare, padx=0, pady=0,                                   # This will cause the spareFrame to appear on the UI.
+        self.spareButton = Button(self.choiceBarUI, background = self.tabOptionColor, command = self.switchFrameSpare, padx=0, pady=0,                              # This will cause the spareFrame to appear on the UI.
         highlightthickness = 0, borderwidth = 0, width = self.buttonWidth, height = self.buttonHeight)                                                              # 
         self.filesButton.pack(side="left", expand=False, anchor = "sw", padx = self.buttonPadX)                                                                     # First.
         self.searchButton.pack(side="left", expand=False, anchor = "sw", padx = self.buttonPadX)                                                                    # Middle.
         self.spareButton.pack(side="left", expand=False, anchor = "sw", padx = self.buttonPadX)                                                                     # Last.
 
-    # Binding events used in the UI. TO-DO soon to fix possible bug
+    # Binding events used in the UI.
         # For using the scrollwheel when interacting with the file tree
         self.buttonCanvas.bind_all("<MouseWheel>", self.buttonCanvasMouseWheel)                                                                                     # This is for Windows to bind to the mousewheel. (And uses delta)
         self.buttonCanvas.bind_all("<Button-4>", self.buttonCanvasMouseWheel)                                                                                       # For linux to bind towards the UP direction of the mousewheel
         self.buttonCanvas.bind_all("<Button-5>", self.buttonCanvasMouseWheel)                                                                                       # For linux to bind towards the DOWN direction of the mousewheel.        
 
         # For using the scrollwheel when interacting with the search list
-        self.searchCanvas.bind_all("<MouseWheel>", self.searchCanvasMouseWheel)
-        self.searchCanvas.bind_all("<Button-4>", self.searchCanvasMouseWheel)
-        self.searchCanvas.bind_all("<Button-5>", self.searchCanvasMouseWheel)
+        self.searchCanvas.bind_all("<MouseWheel>", self.searchCanvasMouseWheel)                                                                                     #
+        self.searchCanvas.bind_all("<Button-4>", self.searchCanvasMouseWheel)                                                                                       #
+        self.searchCanvas.bind_all("<Button-5>", self.searchCanvasMouseWheel)                                                                                       #
 
         # For the search field when looking up files
-        self.inputSearch.bind("<Button>", self.removePlaceHold)
-        self.inputSearch.bind("<Enter>", self.placeholdText)
-        self.inputSearch.bind("<Leave>", self.placeholdText)
+        self.inputSearch.bind("<Button>", self.removePlaceHold)                                                                                                     #
+        self.inputSearch.bind("<Enter>", self.placeholdText)                                                                                                        #
+        self.inputSearch.bind("<Leave>", self.placeholdText)                                                                                                        #
+
+        # For the seperator that can be moved around via a mouse
+        self.seperatorDrag.bind("<B1-Motion>", self.seperatorDragged)                                                                                               #
+        self.seperatorDrag.bind("<Button-1>", self.switchSeperatorColorOn)                                                                                          #
+        self.seperatorDrag.bind("<ButtonRelease-1>", self.switchSeperatorColorAway)                                                                                 #
 
     def emptyAction(self):
         """ A test function to see if the buttons were implemented correctly
@@ -300,79 +335,153 @@ class melody():
         """
         print("I work")
 
-    # UI Events from Buttons
+    # UI Events from Buttons & Events
     def switchFrameTree(self):
         """ Switches to the file tree view frame & updates UI """
-        if self.filesButton['background'] == self.tabOptionColor:
-            self.treeViewFrame.tkraise()
-            self.filesButton.config(background = self.mainForegroundColor)
-            self.searchButton.config(background = self.tabOptionColor)
-            self.spareButton.config(background = self.tabOptionColor)
+        if self.filesButton['background'] == self.tabOptionColor:                                                                                                   #
+            self.treeViewFrame.tkraise()                                                                                                                            #
+            self.filesButton.config(background = self.mainForegroundColor)                                                                                          #
+            self.searchButton.config(background = self.tabOptionColor)                                                                                              #
+            self.spareButton.config(background = self.tabOptionColor)                                                                                               #
 
     def switchFrameSearch(self):
         """ Switches to the search method frame & updates UI """
-        if self.searchButton['background'] == self.tabOptionColor:
-            self.searchFrame.tkraise()
-            self.filesButton.config(background = self.tabOptionColor)
-            self.searchButton.config(background = self.mainForegroundColor)
-            self.spareButton.config(background = self.tabOptionColor)
+        if self.searchButton['background'] == self.tabOptionColor:                                                                                                  #
+            self.searchFrame.tkraise()                                                                                                                              #
+            self.filesButton.config(background = self.tabOptionColor)                                                                                               #
+            self.searchButton.config(background = self.mainForegroundColor)                                                                                         #
+            self.spareButton.config(background = self.tabOptionColor)                                                                                               #
 
     def switchFrameSpare(self):
         """ Switches to the spare frame & updates UI """
-        if self.spareButton['background'] == self.tabOptionColor:
-            self.spareFrame.tkraise()
-            self.filesButton.config(background = self.tabOptionColor)
-            self.searchButton.config(background = self.tabOptionColor)
-            self.spareButton.config(background = self.mainForegroundColor)
+        if self.spareButton['background'] == self.tabOptionColor:                                                                                                   #
+            self.spareFrame.tkraise()                                                                                                                               #
+            self.filesButton.config(background = self.tabOptionColor)                                                                                               #
+            self.searchButton.config(background = self.tabOptionColor)                                                                                              #
+            self.spareButton.config(background = self.mainForegroundColor)                                                                                          #
+
+    def switchSeperatorColorOn(self, event):
+        """ To highlight the seperator when the mouse runs over it """
+        if self.seperatorDrag['background'] == self.mainSeperatorColor:                                                                                             #
+            self.seperatorDrag.configure(background = self.mainHighlightColor)                                                                                      #
+    
+    def switchSeperatorColorAway(self, event):
+        """ To remove the highlighting of the seperator when the mouse is over it"""
+        if self.seperatorDrag['background'] == self.mainHighlightColor:                                                                                             #
+            self.seperatorDrag.configure(background = self.mainSeperatorColor)                                                                                      #
+            self.currentWidth = self.treeViewFrame.winfo_reqwidth()                                                                                                 #
+
+    def seperatorDragged(self, event):                                                                                                                              #
+        referanceWidth = self.treeViewFrame.winfo_reqwidth()                                                                                                        #
+        if event.x < 0:                                                                                                                                             #
+            if referanceWidth + event.x < self.movingSidebarMin:                                                                                                    #
+                return None                                                                                                                                         #
+            self.treeViewFrame.configure(width = referanceWidth + event.x - self.seperatorSize)                                                                     #
+            self.searchFrame.configure(width = referanceWidth + event.x - self.seperatorSize)                                                                       #
+            self.spareFrame.configure(width = referanceWidth + event.x - self.seperatorSize)                                                                        #
+        elif event.x > self.seperatorDrag.winfo_reqwidth():                                                                                                         #
+            if referanceWidth + event.x > self.movingSidebarMax:                                                                                                    #
+                return None                                                                                                                                         #
+            self.treeViewFrame.configure(width = referanceWidth + event.x)                                                                                          #
+            self.searchFrame.configure(width = referanceWidth + event.x)                                                                                            #
+            self.spareFrame.configure(width = referanceWidth + event.x)                                                                                             #
 
     # Keyboard & Mouse events
     def clearInputSearch(self):
         """ Removes all text from the input searchbar offered by the searchFrame """
-        self.inputSearch.delete(0, tk.END)
-        self.inputSearch.config(foreground = self.fadedSearchColor)
-        self.inputSearch.insert(0, "Type here to search...")
+        self.inputSearch.delete(0, tk.END)                                                                                                                          #
+        self.inputSearch.config(foreground = self.fadedSearchColor)                                                                                                 #
+        self.inputSearch.insert(0, "Type here to search...")                                                                                                        #
 
     def placeholdText(self, event):
         """ Will put some placeholder text for the input field.
         This will run when the input field is empty
         """
-        if self.inputSearch.get() == '':
-            self.inputSearch.config(foreground = self.fadedSearchColor)
-            self.inputSearch.insert(0, "Type here to search...")
+        if self.inputSearch.get() == '':                                                                                                                            #
+            self.inputSearch.config(foreground = self.fadedSearchColor)                                                                                             #
+            self.inputSearch.insert(0, "Type here to search...")                                                                                                    #
 
     def removePlaceHold(self, event):
         """ Removes the placeholder text when user clicks the field
         """
-        if "Type here to search..." in self.inputSearch.get() or self.inputSearch.get() in "Type here to search...":
-            self.inputSearch.delete(0, tk.END)
-            self.inputSearch.config(foreground = self.searchColor)
+        if "Type here to search..." in self.inputSearch.get() or self.inputSearch.get() in "Type here to search...":                                                #
+            self.inputSearch.delete(0, tk.END)                                                                                                                      #
+            self.inputSearch.config(foreground = self.searchColor)                                                                                                  #
 
     def buttonCanvasMouseWheel(self, event):
         """ A simple function to update the canvas based on scrollwheel
         This is required due to how I wish for all objects in the canvas (such as a button)
         to be scrollable.
         """
-        if event.num == 5 or event.delta < 0:
-            self.buttonCanvas.yview_scroll(1, "units")
-        else:
-            self.buttonCanvas.yview_scroll(-1, "units")
+        if event.num == 5 or event.delta < 0:                                                                                                                       #
+            self.buttonCanvas.yview_scroll(1, "units")                                                                                                              #
+        else:                                                                                                                                                       #
+            self.buttonCanvas.yview_scroll(-1, "units")                                                                                                             #
 
     def searchCanvasMouseWheel(self, event):
         """ A simple function to update the canvas based oon the scrollwheel
         This is required if I wish for all of the search results to be scrollable.
         """
-        if event.num == 5 or event.delta < 0:
-            self.searchCanvas.yview_scroll(1, "units")
-        else:
-            self.searchCanvas.yview_scroll(-1, "units")
+        if event.num == 5 or event.delta < 0:                                                                                                                       #
+            self.searchCanvas.yview_scroll(1, "units")                                                                                                              #
+        else:                                                                                                                                                       #
+            self.searchCanvas.yview_scroll(-1, "units")                                                                                                             #
+
+    def showBar(self):
+        """ To show the selection frames to have less writting space
+        """
+        width = self.treeViewFrame.winfo_reqwidth()                                                                                                                 #
+        if width == 1:                                                                                                                                              #
+            self.treeViewFrame.grid(row=0, column=0, sticky="nsew")                                                                                                 #
+            self.searchFrame.grid(row=0, column=0, sticky="nsew")                                                                                                   #
+            self.spareFrame.grid(row=0, column=0, sticky="nsew")                                                                                                    #
+            self.seperatorDrag.grid(row=0, column=1, sticky="nsw")                                                                                                  #
+            self.choiceBarUI.pack(side='right', expand=True)                                                                                                        #
+
+        if self.treeViewFrame.winfo_reqwidth() >= self.currentWidth:                                                                                                #
+            self.expandButton.configure(command= self.hideBar)                                                                                                      #
+            self.treeViewFrame.configure(width = self.currentWidth)                                                                                                 #
+            self.searchFrame.configure(width = self.currentWidth)                                                                                                   #
+            self.spareFrame.configure(width = self.currentWidth)                                                                                                    #
+            return None
+
+        self.treeViewFrame.configure(width = width + self.animatedSidebarCreep)                                                                                     #
+        self.searchFrame.configure(width = width + self.animatedSidebarCreep)                                                                                       #
+        self.spareFrame.configure(width = width + self.animatedSidebarCreep)                                                                                        #
+        self.root.after(1, self.showBar)                                                                                                                            #
+    
+    def hideBar(self):
+        """ To hide the selection frames to have more writting space.
+        """
+        width = self.treeViewFrame.winfo_reqwidth()                                                                                                                 #
+        if width == 1 or width <= self.animatedSidebarCreep:                                                                                                        #
+            self.expandButton.configure(command= self.showBar)                                                                                                      #
+            self.treeViewFrame.configure(width = 1)                                                                                                                 #
+            self.searchFrame.configure(width = 1)                                                                                                                   #
+            self.spareFrame.configure(width = 1)                                                                                                                    #
+            self.treeViewFrame.grid_forget()                                                                                                                        #
+            self.searchFrame.grid_forget()                                                                                                                          #
+            self.spareFrame.grid_forget()                                                                                                                           #
+            self.seperatorDrag.grid_forget()                                                                                                                        #
+            return None
+
+        if width == self.currentWidth:
+            self.choiceBarUI.pack_forget()            
+
+        self.treeViewFrame.configure(width = width - self.animatedSidebarCreep)                                                                                     #
+        self.searchFrame.configure(width = width - self.animatedSidebarCreep)                                                                                       #
+        self.spareFrame.configure(width = width - self.animatedSidebarCreep)                                                                                        #
+        self.root.after(1, self.hideBar)                                                                                                                            #
+    
+    # Secondary Windows
+    def userWindow(self, windowType):
+        """ Fairly self explanitory,
+        it initializes a new class that will act as a custom popup window
+        """
+        createWindow(self.root, windowType)                                                                                                                         #
 
 if __name__ == "__main__":
-    """ Only runs when this script is specifically called.
-    Why aren't these defined in the class? Because that would be restricting.
-    Maybe some want it to never move, and others want a bigger screen size.
-    """
+    """ Only runs when this script is specifically called."""
     root = tk.Tk()
-    root.geometry("1440x1024")                                                                                                                                      # Width x Height
-    root.resizable(True, True)                                                                                                                                      # Set these to False to prevent resizing
     melody(root)
     root.mainloop()
