@@ -16,7 +16,7 @@ from tkinter import Scrollbar
 from tkinter import Entry
 
 # My own scripts
-from basicMarkdown import markdownView as bMark
+from someMarkdown import markdownView as bMark
 
 # Extra imports
 import re
